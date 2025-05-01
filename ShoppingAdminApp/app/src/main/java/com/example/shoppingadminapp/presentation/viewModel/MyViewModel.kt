@@ -5,13 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.shoppingadminapp.common.ResultState
 import com.example.shoppingadminapp.domain.UseCase.AddCategoryUseCase
 import com.example.shoppingadminapp.domain.models.CategoryModels
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
+@HiltViewModel
 class MyViewModel @Inject constructor(
     private val addCategoryUseCase: AddCategoryUseCase
 ) : ViewModel() {
@@ -42,7 +43,7 @@ class MyViewModel @Inject constructor(
 
 data class AddCategoryState(
     val isLoading: Boolean = false,
-    val isSuccess: String = "",
-    val error: String = ""
-
+    val isSuccess: String ? = null,
+    val error: String ? = null
 )
+

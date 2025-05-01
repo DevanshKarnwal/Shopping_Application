@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 
-    id("com.google.dagger.hilt.android")
+    id("dagger.hilt.android.plugin")
     id("com.google.devtools.ksp")
     kotlin("plugin.serialization") version "2.1.0"
     alias(libs.plugins.google.gms.google.services)
@@ -49,7 +49,7 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.51.1")
     implementation(libs.firebase.storage)
     implementation(libs.firebase.firestore)
-    ksp("com.google.dagger:hilt-compiler:2.48")
+    ksp("com.google.dagger:hilt-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     ksp("androidx.hilt:hilt-compiler:1.2.0")
     implementation("com.google.dagger:hilt-android:2.51.1")

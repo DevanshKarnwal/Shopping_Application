@@ -1,8 +1,10 @@
 package com.example.shoppingadminapp.data.repoImpl
 
 import com.example.shoppingadminapp.common.CATEGORY_PATH
+import com.example.shoppingadminapp.common.PRODUCT_PATH
 import com.example.shoppingadminapp.common.ResultState
 import com.example.shoppingadminapp.domain.models.CategoryModels
+import com.example.shoppingadminapp.domain.models.ProductModels
 import com.example.shoppingadminapp.domain.repo.Repo
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -31,4 +33,43 @@ class RepoImpl @Inject constructor(
                     close()
                 }
         }
+
+    override suspend fun getAllCategories(): Flow<ResultState<List<CategoryModels>>> = callbackFlow  {
+        trySend(ResultState.Loading)
+        try {
+            fireStore.collection(CATEGORY_PATH).get().addOnSuccessListener {
+                val categories = it.documents.mapNotNull { doc ->
+                    doc.toObject(CategoryModels::class.java)
+                }
+                trySend(ResultState.Success(categories))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        }
+        catch (e: Exception){
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose{
+            close()
+        }
+    }
+
+    override suspend fun addProduct(product: ProductModels): Flow<ResultState<String>> = callbackFlow {
+        trySend(ResultState.Loading)
+        try {
+            fireStore.collection(PRODUCT_PATH).add(product).addOnSuccessListener {
+                trySend(ResultState.Success("Product Added Successfully"))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        }
+        catch (e: Exception){
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose{
+            close()
+        }
+    }
+
+
 }
