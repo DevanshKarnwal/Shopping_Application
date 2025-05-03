@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.shoppingadminapp.presentation.screens.AddCategoryScreen
+import com.example.shoppingadminapp.presentation.screens.AddProductScreen
 import com.example.shoppingadminapp.presentation.viewModel.AddCategoryState
 import com.example.shoppingadminapp.ui.theme.ShoppingAdminAppTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,7 +25,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ShoppingAdminAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AddCategoryScreen()
+                    AddProductScreen()
                 }
             }
         }

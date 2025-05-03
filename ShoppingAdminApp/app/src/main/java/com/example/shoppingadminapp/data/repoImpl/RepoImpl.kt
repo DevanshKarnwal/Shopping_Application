@@ -1,5 +1,6 @@
 package com.example.shoppingadminapp.data.repoImpl
 
+import android.net.Uri
 import com.example.shoppingadminapp.common.CATEGORY_PATH
 import com.example.shoppingadminapp.common.PRODUCT_PATH
 import com.example.shoppingadminapp.common.ResultState
@@ -70,6 +71,27 @@ class RepoImpl @Inject constructor(
             close()
         }
     }
+
+    override suspend fun addProductPhoto(photoUri: Uri): Flow<ResultState<String>> = callbackFlow{
+        trySend(ResultState.Loading)
+        try {
+            storage.reference.child("products/${System.currentTimeMillis()}").putFile(
+                photoUri ?: Uri.EMPTY
+            ).addOnSuccessListener {
+                    it.storage.downloadUrl.addOnSuccessListener {
+                            trySend(ResultState.Success(it.toString()))
+                    }.addOnFailureListener {
+                        trySend(ResultState.Error(it.message.toString()))
+                    }
+            }
+        }catch (e: Exception){
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose{
+            close()
+        }
+    }
+
 
 
 }
