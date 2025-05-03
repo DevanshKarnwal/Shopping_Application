@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.shoppingapp.presentation.screens.HomeScreenUi
 import com.example.shoppingapp.presentation.screens.LogInScreen
 import com.example.shoppingapp.presentation.screens.SignUpUi
 import com.example.shoppingapp.ui.theme.ShoppingAppTheme
@@ -24,7 +25,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ShoppingAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LogInScreen()
+                    HomeScreenUi()
                 }
             }
         }

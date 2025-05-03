@@ -48,8 +48,8 @@ fun AddProductScreen(viewModel: MyViewModel = hiltViewModel()) {
     var description by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var availableUnit by remember { mutableStateOf(0) }
-    val photoUri = remember { mutableStateOf("") }
-    val photoUrl = remember { mutableStateOf("") }
+    val photoImageUri = remember { mutableStateOf("") }
+    val productImage = remember { mutableStateOf("") }
 
     val addProductPhotoState = viewModel.addProductPhotoState.collectAsState()
 
@@ -58,7 +58,7 @@ fun AddProductScreen(viewModel: MyViewModel = hiltViewModel()) {
     ) {
         uri : Uri? ->
             if(uri != null){
-                photoUri.value = uri.toString()
+                photoImageUri.value = uri.toString()
                 viewModel.addProductPhoto(uri)
             }
     }
@@ -117,7 +117,7 @@ fun AddProductScreen(viewModel: MyViewModel = hiltViewModel()) {
                 Text(text = addProductPhotoState.value.error.toString())
             }
             addProductPhotoState.value.isSuccess?.isNotBlank() == true -> {
-                photoUrl.value = addProductPhotoState.value.isSuccess.toString()
+                productImage.value = addProductPhotoState.value.isSuccess.toString()
             }
         }
 
@@ -202,7 +202,7 @@ fun AddProductScreen(viewModel: MyViewModel = hiltViewModel()) {
                     description = description,
                     category = category,
                     availableUnit = availableUnit,
-                    image = photoUrl.value
+                    image = productImage.value
                 )
                 viewModel.addProduct(data)
                 name = ""
@@ -211,8 +211,8 @@ fun AddProductScreen(viewModel: MyViewModel = hiltViewModel()) {
                 description = ""
                 category = ""
                 availableUnit = 0
-                photoUrl.value = ""
-                photoUri.value = ""
+                productImage.value = ""
+                photoImageUri.value = ""
             },
             enabled = name.isNotBlank()
                     && price > 0
@@ -220,7 +220,7 @@ fun AddProductScreen(viewModel: MyViewModel = hiltViewModel()) {
                     && description.isNotBlank()
                     && category.isNotBlank()
                     && availableUnit > 0
-                    && photoUrl.value.isNotBlank()
+                    && productImage.value.isNotBlank()
 
         ) {
             Text("Add Product")

@@ -1,7 +1,12 @@
 package com.example.shoppingapp.data.repoImpl
 
+import android.util.Log
+import com.example.shoppingapp.common.CATEGORY_PATH
+import com.example.shoppingapp.common.PRODUCT_PATH
 import com.example.shoppingapp.common.ResultState
 import com.example.shoppingapp.common.USER_PATH
+import com.example.shoppingapp.domain.models.CategoryDataModels
+import com.example.shoppingapp.domain.models.ProductDataModel
 import com.example.shoppingapp.domain.models.UserDataModels
 import com.example.shoppingapp.domain.repo.Repo
 import com.google.firebase.auth.FirebaseAuth
@@ -25,13 +30,13 @@ class RepoImpl @Inject constructor(
                         val userId = it.user?.uid
                         firebaseFireStore.collection(USER_PATH).document(it.user?.uid.toString())
                             .set(userData).addOnSuccessListener {
-                            trySend(ResultState.Success("User created with UID: $userId"))
-                        }.addOnFailureListener {
-                            trySend(ResultState.Error(it.message.toString()))
-                        }
+                                trySend(ResultState.Success("User created successfully"))
+                            }.addOnFailureListener {
+                                trySend(ResultState.Error(it.message.toString()))
+                            }
                     }.addOnFailureListener {
-                    trySend(ResultState.Error(it.message.toString()))
-                }
+                        trySend(ResultState.Error(it.message.toString()))
+                    }
 
 
             } catch (e: Exception) {
@@ -43,16 +48,42 @@ class RepoImpl @Inject constructor(
             }
         }
 
-    override fun loginWithEmailAndPassword(userData: UserDataModels): Flow<ResultState<String>> = callbackFlow{
+    override fun loginWithEmailAndPassword(userData: UserDataModels): Flow<ResultState<String>> =
+        callbackFlow {
+            trySend(ResultState.Loading)
+            try {
+                firebaseAuth.signInWithEmailAndPassword(userData.email, userData.password)
+                    .addOnSuccessListener {
+                        trySend(ResultState.Success("User logged Successfully"))
+                    }.addOnFailureListener {
+                        trySend(ResultState.Error(it.message.toString()))
+                    }
+
+            } catch (e: Exception) {
+                trySend(ResultState.Error(e.message.toString()))
+            }
+            awaitClose {
+                close()
+            }
+
+        }
+
+    override fun getCategory(): Flow<ResultState<List<CategoryDataModels>>> = callbackFlow {
         trySend(ResultState.Loading)
         try {
-             firebaseAuth.signInWithEmailAndPassword(userData.email, userData.password).addOnSuccessListener {
-                 trySend(ResultState.Success("User logged Successfully"))
-             }.addOnFailureListener {
-                 trySend(ResultState.Error(it.message.toString()))
-             }
+            firebaseFireStore.collection(CATEGORY_PATH).get()
+                .addOnSuccessListener { querySnapshot ->
+                    val category = querySnapshot.documents.mapNotNull {
+                        it.toObject(CategoryDataModels::class.java)
+                    }
 
-        }catch (e : Exception){
+                    trySend(ResultState.Success(category))
+
+                }.addOnFailureListener {
+                    trySend(ResultState.Error(it.message.toString()))
+                }
+
+        } catch (e: Exception) {
             trySend(ResultState.Error(e.message.toString()))
         }
         awaitClose {
@@ -60,5 +91,50 @@ class RepoImpl @Inject constructor(
         }
 
     }
+
+    override fun getProducts(): Flow<ResultState<List<ProductDataModel>>> = callbackFlow {
+        Log.d("TAG Product", "getProducts: repoImpl")
+        try {
+
+            trySend(ResultState.Loading)
+            firebaseFireStore.collection(PRODUCT_PATH).get().addOnSuccessListener {
+                val product = it.documents.mapNotNull {
+                    it.toObject(ProductDataModel::class.java)?.apply {
+                        productId = it.id
+                    }
+                }
+                trySend(ResultState.Success(product))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+
+        } catch (e: Exception) {
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose {
+            close()
+        }
+    }
+
+    override fun getProductById(productId: String): Flow<ResultState<ProductDataModel>> =
+        callbackFlow {
+            try {
+                trySend(ResultState.Loading)
+                firebaseFireStore.collection(PRODUCT_PATH).document(productId).get().addOnSuccessListener {
+                    val product = it.toObject(ProductDataModel::class.java)
+                    trySend(ResultState.Success(product!!))
+                }.addOnFailureListener {
+                    trySend(ResultState.Error(it.message.toString()))
+
+                }
+            } catch (e: Exception) {
+                trySend(ResultState.Error(e.message.toString()))
+            }
+            awaitClose {
+                close()
+
+            }
+        }
+
 
 }
