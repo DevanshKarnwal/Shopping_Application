@@ -7,6 +7,7 @@ import com.example.shoppingapp.common.ResultState
 import com.example.shoppingapp.domain.UseCase.CreateUserUseCase
 import com.example.shoppingapp.domain.UseCase.GetAllCategoriesUseCase
 import com.example.shoppingapp.domain.UseCase.GetAllProductsUseCase
+import com.example.shoppingapp.domain.UseCase.GetProductByCategoryUseCase
 import com.example.shoppingapp.domain.UseCase.LoginUserUseCase
 import com.example.shoppingapp.domain.models.CategoryDataModels
 import com.example.shoppingapp.domain.models.ProductDataModel
@@ -24,20 +25,24 @@ class MyViewModel @Inject constructor(
     private val createUserUseCase: CreateUserUseCase,
     private val loginUserUseCase: LoginUserUseCase,
     private val getAlCategoriesUseCase: GetAllCategoriesUseCase,
-    private val getAllProductsUseCase: GetAllProductsUseCase
+    private val getAllProductsUseCase: GetAllProductsUseCase,
+    private val getProductByCategoryUseCase: GetProductByCategoryUseCase
 ) : ViewModel() {
 
-    val _createUserState = MutableStateFlow(CreateUserState())
+    private val _createUserState = MutableStateFlow(CreateUserState())
     val createUserState = _createUserState.asStateFlow()
 
-    val _loginUserState = MutableStateFlow(LoginUserState())
+    private val _loginUserState = MutableStateFlow(LoginUserState())
     val loginUserState = _loginUserState.asStateFlow()
 
-    val _getAllCategoriesState = MutableStateFlow(GetAllCategories())
+    private val _getAllCategoriesState = MutableStateFlow(GetAllCategories())
     val getAllCategoriesState = _getAllCategoriesState.asStateFlow()
 
-    val _homeScreenState = MutableStateFlow(HomeScreenState())
+    private val _homeScreenState = MutableStateFlow(HomeScreenState())
     val homeScreenState = _homeScreenState.asStateFlow()
+
+    private val _productByCategoryState = MutableStateFlow(ProductByCategoryState())
+    val productByCategoryState = _productByCategoryState.asStateFlow()
 
     fun createUser(userData: UserDataModels) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -80,7 +85,26 @@ class MyViewModel @Inject constructor(
         }
     }
 
+    fun getProductByCategory(categoryName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            getProductByCategoryUseCase.getProductByCategoryUseCase(categoryName).collect {
+                when (it) {
+                    ResultState.Loading -> {
+                        _productByCategoryState.value = ProductByCategoryState(isLoaded = true)
+                    }
+                    is ResultState.Error -> {
+                        _productByCategoryState.value = ProductByCategoryState(isError = it.message)
+                    }
+                    is ResultState.Success -> {
+                        _productByCategoryState.value = ProductByCategoryState(isSuccessful = it.data)
+                    }
 
+                }
+
+            }
+        }
+
+    }
 
     fun loadHomeScreenData() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -96,6 +120,9 @@ class MyViewModel @Inject constructor(
                 Log.d("TAG Product", "getProducts: viewmodel after combine")
 
                 when {
+                    categoriesState is ResultState.Loading && productsState is ResultState.Loading -> {
+                        _homeScreenState.value = HomeScreenState(isLoaded = true)
+                    }
                     categoriesState is ResultState.Error -> {
                         _homeScreenState.value =
                             HomeScreenState(isError = categoriesState.message)
@@ -113,9 +140,7 @@ class MyViewModel @Inject constructor(
                         )
                     }
 
-                    else -> {
-                        _homeScreenState.value = HomeScreenState(isLoaded = true)
-                    }
+
                 }
             }
         }
@@ -167,5 +192,9 @@ data class HomeScreenState(
     val isError: String? = null,
     val category: List<CategoryDataModels>? = null,
     val product: List<ProductDataModel>? = null
-
+)
+data class ProductByCategoryState(
+    val isLoaded: Boolean = false,
+    val isSuccessful: List<ProductDataModel>? = null,
+    val isError: String? = null
 )

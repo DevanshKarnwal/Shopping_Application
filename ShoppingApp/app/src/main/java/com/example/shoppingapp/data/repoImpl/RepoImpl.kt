@@ -136,5 +136,26 @@ class RepoImpl @Inject constructor(
             }
         }
 
+    override fun getProductByCategory(categoryName: String): Flow<ResultState<List<ProductDataModel>>> = callbackFlow{
+        try {
+            trySend(ResultState.Loading)
+            firebaseFireStore.collection(PRODUCT_PATH).whereEqualTo("category", categoryName).get().addOnSuccessListener {
+                val product = it.documents.mapNotNull {
+                    it.toObject(ProductDataModel::class.java)?.apply {
+                        productId = it.id
+                    }
+                }
+                trySend(ResultState.Success(product))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        }catch (e : Exception){
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose{
+            close()
+        }
+    }
+
 
 }

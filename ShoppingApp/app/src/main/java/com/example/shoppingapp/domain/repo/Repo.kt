@@ -19,4 +19,6 @@ interface Repo {
 
     fun getProductById(productId : String) : Flow<ResultState<ProductDataModel>>
 
+    fun getProductByCategory(categoryName : String) : Flow<ResultState<List<ProductDataModel>>>
+
 }
