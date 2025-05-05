@@ -1,6 +1,7 @@
 package com.example.shoppingapp.domain.repo
 
 import com.example.shoppingapp.common.ResultState
+import com.example.shoppingapp.domain.models.AddToCartModel
 import com.example.shoppingapp.domain.models.CategoryDataModels
 import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.domain.models.ProductDataModel
@@ -21,6 +22,15 @@ interface Repo {
 
     fun getProductByCategory(categoryName : String) : Flow<ResultState<List<ProductDataModel>>>
 
+    fun getUser() : Flow<ResultState<UserDataModels>>
+
+    fun updateUserData(userData: UserDataModels) : Flow<ResultState<String>>
+
+    fun setUserProfileImage(imageUrl : String) : Flow<ResultState<String>>
+
     fun addToWishList(favData : FavDataModel) : Flow<ResultState<String>>
+
+    fun addToCart(cartData : AddToCartModel) : Flow<ResultState<String>>
+
 
 }

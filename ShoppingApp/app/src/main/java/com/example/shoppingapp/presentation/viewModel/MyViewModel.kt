@@ -4,13 +4,18 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shoppingapp.common.ResultState
+import com.example.shoppingapp.domain.UseCase.AddToCartUseCase
 import com.example.shoppingapp.domain.UseCase.AddToWishListUseCase
 import com.example.shoppingapp.domain.UseCase.CreateUserUseCase
 import com.example.shoppingapp.domain.UseCase.GetAllCategoriesUseCase
 import com.example.shoppingapp.domain.UseCase.GetAllProductsUseCase
 import com.example.shoppingapp.domain.UseCase.GetProductByCategoryUseCase
 import com.example.shoppingapp.domain.UseCase.GetProductByIdUseCase
+import com.example.shoppingapp.domain.UseCase.GetUserProfileImageUseCase
+import com.example.shoppingapp.domain.UseCase.GetUserUseCase
 import com.example.shoppingapp.domain.UseCase.LoginUserUseCase
+import com.example.shoppingapp.domain.UseCase.UpdateUserDataUseCase
+import com.example.shoppingapp.domain.models.AddToCartModel
 import com.example.shoppingapp.domain.models.CategoryDataModels
 import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.domain.models.ProductDataModel
@@ -33,6 +38,10 @@ class MyViewModel @Inject constructor(
     private val getProductByCategoryUseCase: GetProductByCategoryUseCase,
     private val getProductByIdUseCase: GetProductByIdUseCase,
     private val addToWishListUseCase: AddToWishListUseCase,
+    private val addToCartUseCase: AddToCartUseCase,
+    private val getUserUseCase: GetUserUseCase,
+    private val updateUserDataUseCase: UpdateUserDataUseCase,
+    private val updateUserProfileImageUseCase: GetUserProfileImageUseCase,
     private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
 
@@ -56,6 +65,18 @@ class MyViewModel @Inject constructor(
 
     private val _addToWishListState = MutableStateFlow(AddToWishListState())
     val addToWishListState = _addToWishListState.asStateFlow()
+
+    private val _addToCartState = MutableStateFlow(AddToCartState())
+    val addToCartState = _addToCartState.asStateFlow()
+
+    private val _getUserState = MutableStateFlow(GetUserState())
+    val getUserState = _getUserState.asStateFlow()
+
+    private val _updateUserDataState = MutableStateFlow(UpdateUserDataState())
+    val updateUserDataState = _updateUserDataState.asStateFlow()
+
+    private val _updateUserProfileImageState = MutableStateFlow(UpdateUserProfileImageState())
+    val updateUserProfileImageState = _updateUserProfileImageState.asStateFlow()
 
     var userId = ""
         private set
@@ -110,11 +131,14 @@ class MyViewModel @Inject constructor(
                     ResultState.Loading -> {
                         _productByCategoryState.value = ProductByCategoryState(isLoaded = true)
                     }
+
                     is ResultState.Error -> {
                         _productByCategoryState.value = ProductByCategoryState(isError = it.message)
                     }
+
                     is ResultState.Success -> {
-                        _productByCategoryState.value = ProductByCategoryState(isSuccessful = it.data)
+                        _productByCategoryState.value =
+                            ProductByCategoryState(isSuccessful = it.data)
                     }
 
                 }
@@ -141,6 +165,7 @@ class MyViewModel @Inject constructor(
                     categoriesState is ResultState.Loading && productsState is ResultState.Loading -> {
                         _homeScreenState.value = HomeScreenState(isLoaded = true)
                     }
+
                     categoriesState is ResultState.Error -> {
                         _homeScreenState.value =
                             HomeScreenState(isError = categoriesState.message)
@@ -184,16 +209,18 @@ class MyViewModel @Inject constructor(
         }
     }
 
-    fun getProductById(id : String){
+    fun getProductById(id: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            getProductByIdUseCase.getProductById(id).collect{
-                when(it){
+            getProductByIdUseCase.getProductById(id).collect {
+                when (it) {
                     is ResultState.Loading -> {
                         _getProductByIdState.value = GetProductByIdState(isLoaded = true)
                     }
+
                     is ResultState.Error -> {
                         _getProductByIdState.value = GetProductByIdState(isError = it.message)
                     }
+
                     is ResultState.Success -> {
                         _getProductByIdState.value = GetProductByIdState(isSuccessful = it.data)
                     }
@@ -202,16 +229,18 @@ class MyViewModel @Inject constructor(
         }
     }
 
-    fun addToWishList(favData: FavDataModel){
+    fun addToWishList(favData: FavDataModel) {
         viewModelScope.launch(Dispatchers.IO) {
-            addToWishListUseCase.addToWishListUseCase(favData).collect{
-                when(it){
+            addToWishListUseCase.addToWishListUseCase(favData).collect {
+                when (it) {
                     is ResultState.Loading -> {
                         _addToWishListState.value = AddToWishListState(isLoaded = true)
                     }
+
                     is ResultState.Error -> {
                         _addToWishListState.value = AddToWishListState(isError = it.message)
                     }
+
                     is ResultState.Success -> {
                         _addToWishListState.value = AddToWishListState(isSuccessful = it.data)
                     }
@@ -221,6 +250,81 @@ class MyViewModel @Inject constructor(
         }
     }
 
+    fun addToCart(cartData: AddToCartModel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            addToCartUseCase.addToCartUseCase(cartData).collect {
+                when (it) {
+                    is ResultState.Loading -> {
+                        _addToCartState.value = AddToCartState(isLoaded = true)
+                    }
+
+                    is ResultState.Error -> {
+                        _addToCartState.value = AddToCartState(isError = it.message)
+                    }
+
+                    is ResultState.Success -> {
+                        _addToCartState.value = AddToCartState(isSuccessful = it.data)
+                    }
+                }
+            }
+        }
+    }
+
+    fun getUser(){
+        viewModelScope.launch(Dispatchers.IO) {
+            getUserUseCase.getUserUseCase().collect{
+                when(it){
+                    is ResultState.Loading -> {
+                        _getUserState.value = GetUserState(isLoaded = true)
+                    }
+                    is ResultState.Error -> {
+                        _getUserState.value = GetUserState(isError = it.message)
+                    }
+                    is ResultState.Success -> {
+                        _getUserState.value = GetUserState(isSuccessful = it.data)
+                    }
+                }
+            }
+        }
+    }
+
+    fun updateUser(user : UserDataModels ){
+        viewModelScope.launch(Dispatchers.IO) {
+            updateUserDataUseCase.updateUserDataUseCase(user).collect{
+                when(it){
+                    is ResultState.Loading -> {
+                        _updateUserDataState.value = UpdateUserDataState(isLoaded = true)
+                    }
+                    is ResultState.Error -> {
+                        _updateUserDataState.value = UpdateUserDataState(isError = it.message)
+                    }
+                    is ResultState.Success -> {
+                        _updateUserDataState.value = UpdateUserDataState(isSuccessful = it.data)
+                    }
+
+                }
+            }
+        }
+
+    }
+
+    fun updateUserProfileImage(imageUrl : String){
+        viewModelScope.launch(Dispatchers.IO) {
+            updateUserProfileImageUseCase.getUserProfileImageUseCase(imageUrl).collect{
+                when(it){
+                    is ResultState.Loading -> {
+                        _updateUserProfileImageState.value = UpdateUserProfileImageState(isLoaded = true)
+                    }
+                    is ResultState.Error -> {
+                        _updateUserProfileImageState.value = UpdateUserProfileImageState(isError = it.message)
+                    }
+                    is ResultState.Success -> {
+                        _updateUserProfileImageState.value = UpdateUserProfileImageState(isSuccessful = it.data)
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -248,6 +352,7 @@ data class HomeScreenState(
     val category: List<CategoryDataModels>? = null,
     val product: List<ProductDataModel>? = null
 )
+
 data class ProductByCategoryState(
     val isLoaded: Boolean = false,
     val isSuccessful: List<ProductDataModel>? = null,
@@ -261,6 +366,30 @@ data class GetProductByIdState(
 )
 
 data class AddToWishListState(
+    val isLoaded: Boolean = false,
+    val isSuccessful: String? = null,
+    val isError: String? = null
+)
+
+data class AddToCartState(
+    val isLoaded: Boolean = false,
+    val isSuccessful: String? = null,
+    val isError: String? = null
+)
+
+data class GetUserState(
+    val isLoaded: Boolean = false,
+    val isSuccessful: UserDataModels? = null,
+    val isError: String? = null
+)
+
+data class UpdateUserDataState(
+    val isLoaded: Boolean = false,
+    val isSuccessful: String? = null,
+    val isError: String? = null
+)
+
+data class UpdateUserProfileImageState(
     val isLoaded: Boolean = false,
     val isSuccessful: String? = null,
     val isError: String? = null

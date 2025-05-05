@@ -163,7 +163,7 @@ fun App(
                     }
 
                     composable<Routes.ProfileScreenRoute> {
-                        ProfileScreenUi()
+                        ProfileScreenUi(navController = navController,firebaseAuth = firebaseAuth)
                     }
                     composable<Routes.WishListScreenRoute> {
                         WishListScreenUi()

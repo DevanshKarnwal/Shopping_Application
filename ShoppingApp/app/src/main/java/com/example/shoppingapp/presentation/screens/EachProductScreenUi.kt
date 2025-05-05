@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import com.example.shoppingapp.domain.models.AddToCartModel
 import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.presentation.nav.Routes
 import com.example.shoppingapp.presentation.viewModel.MyViewModel
@@ -27,6 +28,7 @@ fun EachProductScreenUi(
 
     val productState = viewModel.getProductByIdState.collectAsState()
     val addToWishListState = viewModel.addToWishListState.collectAsState()
+    val addToCartState = viewModel.addToCartState.collectAsState()
     val context = LocalContext.current
     LaunchedEffect(key1 = Unit) {
         viewModel.getProductById(id)
@@ -44,6 +46,17 @@ fun EachProductScreenUi(
             }
             addToWishListState.value.isSuccessful != null -> {
                 Toast.makeText(context, addToWishListState.value.isSuccessful, Toast.LENGTH_SHORT).show()
+            }
+        }
+        when{
+            addToCartState.value.isLoaded -> {
+                CircularProgressIndicator()
+            }
+            addToCartState.value.isError != null -> {
+                Text(text = addToCartState.value.isError!!)
+            }
+            addToCartState.value.isSuccessful != null -> {
+                Toast.makeText(context, addToCartState.value.isSuccessful, Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -72,7 +85,11 @@ fun EachProductScreenUi(
                     Text("Buy Now")
                 }
                 Button(onClick = {
-                    navController.navigate(Routes.CartScreenRoute)
+                    val data = AddToCartModel(
+                        productId = id,
+                        userId = viewModel.userId
+                    )
+                    viewModel.addToCart(data)
                 }) {
                     Text("Add to Cart")
                 }

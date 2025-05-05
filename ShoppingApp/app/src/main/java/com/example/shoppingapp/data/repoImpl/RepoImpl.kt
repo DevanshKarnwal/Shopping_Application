@@ -1,12 +1,16 @@
 package com.example.shoppingapp.data.repoImpl
 
 import android.util.Log
+import androidx.core.net.toUri
 import com.example.shoppingapp.common.ADDTOWISHLIST_PATH
+import com.example.shoppingapp.common.ADD_TO_CART_PATH
+import com.example.shoppingapp.common.CART_ID_PATH
 import com.example.shoppingapp.common.CATEGORY_PATH
 import com.example.shoppingapp.common.PRODUCT_PATH
 import com.example.shoppingapp.common.ResultState
 import com.example.shoppingapp.common.USER_FAV
 import com.example.shoppingapp.common.USER_PATH
+import com.example.shoppingapp.domain.models.AddToCartModel
 import com.example.shoppingapp.domain.models.CategoryDataModels
 import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.domain.models.ProductDataModel
@@ -14,6 +18,7 @@ import com.example.shoppingapp.domain.models.UserDataModels
 import com.example.shoppingapp.domain.repo.Repo
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -21,7 +26,8 @@ import javax.inject.Inject
 
 class RepoImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-    private val firebaseFireStore: FirebaseFirestore
+    private val firebaseFireStore: FirebaseFirestore,
+    private val firebaseStorage: FirebaseStorage
 ) : Repo {
     override fun registerUserWithEmailAndPassword(userData: UserDataModels): Flow<ResultState<String>> =
         callbackFlow {
@@ -173,6 +179,80 @@ class RepoImpl @Inject constructor(
                 }.addOnFailureListener {
                     trySend(ResultState.Error(it.message.toString()))
                 }
+        } catch (e: Exception) {
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose {
+            close()
+        }
+    }
+
+    override fun addToCart(cartData: AddToCartModel): Flow<ResultState<String>> = callbackFlow {
+        try {
+            trySend(ResultState.Loading)
+            firebaseFireStore.collection(ADD_TO_CART_PATH).document(firebaseAuth.currentUser!!.uid)
+                .collection(CART_ID_PATH).add(cartData).addOnSuccessListener {
+                    trySend(ResultState.Success("Added to cart"))
+                }.addOnFailureListener {
+                    trySend(ResultState.Error(it.message.toString()))
+                }
+        } catch (e: Exception) {
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose {
+            close()
+        }
+    }
+
+    override fun getUser(): Flow<ResultState<UserDataModels>> = callbackFlow {
+        try {
+            trySend(ResultState.Loading)
+            firebaseFireStore.collection(USER_PATH).document(firebaseAuth.currentUser!!.uid).get()
+                .addOnSuccessListener {
+                    trySend(ResultState.Success(it.toObject(UserDataModels::class.java)!!))
+                }.addOnFailureListener {
+                    trySend(ResultState.Error(it.message.toString()))
+                }
+        } catch (e: Exception) {
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose {
+            close()
+        }
+    }
+
+    override fun updateUserData(userData: UserDataModels): Flow<ResultState<String>> =
+        callbackFlow {
+            try {
+                trySend(ResultState.Loading)
+                firebaseFireStore.collection(USER_PATH).document(firebaseAuth.currentUser!!.uid)
+                    .set(userData).addOnSuccessListener {
+                        trySend(ResultState.Success("user data updated"))
+                    }.addOnFailureListener {
+                        trySend(ResultState.Error(it.message.toString()))
+                    }
+            } catch (e: Exception) {
+                trySend(ResultState.Error(e.message.toString()))
+            }
+            awaitClose {
+                close()
+            }
+        }
+
+    override fun setUserProfileImage(imageUrl: String): Flow<ResultState<String>> = callbackFlow {
+        try {
+            trySend(ResultState.Loading)
+            firebaseStorage.reference.child("UserProfileImage/${firebaseAuth.currentUser!!.uid}")
+                .putFile(imageUrl.toUri()).addOnSuccessListener {
+                    it.storage.downloadUrl.addOnSuccessListener{
+                        trySend(ResultState.Success(it.toString()))
+                    }.addOnFailureListener {
+                        trySend(ResultState.Error(it.message.toString()))
+                    }
+                }.addOnFailureListener {
+                    trySend(ResultState.Error(it.message.toString()))
+                }
+
         } catch (e: Exception) {
             trySend(ResultState.Error(e.message.toString()))
         }
