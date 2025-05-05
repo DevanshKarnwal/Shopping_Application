@@ -1,11 +1,14 @@
 package com.example.shoppingapp.data.repoImpl
 
 import android.util.Log
+import com.example.shoppingapp.common.ADDTOWISHLIST_PATH
 import com.example.shoppingapp.common.CATEGORY_PATH
 import com.example.shoppingapp.common.PRODUCT_PATH
 import com.example.shoppingapp.common.ResultState
+import com.example.shoppingapp.common.USER_FAV
 import com.example.shoppingapp.common.USER_PATH
 import com.example.shoppingapp.domain.models.CategoryDataModels
+import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.domain.models.ProductDataModel
 import com.example.shoppingapp.domain.models.UserDataModels
 import com.example.shoppingapp.domain.repo.Repo
@@ -120,13 +123,14 @@ class RepoImpl @Inject constructor(
         callbackFlow {
             try {
                 trySend(ResultState.Loading)
-                firebaseFireStore.collection(PRODUCT_PATH).document(productId).get().addOnSuccessListener {
-                    val product = it.toObject(ProductDataModel::class.java)
-                    trySend(ResultState.Success(product!!))
-                }.addOnFailureListener {
-                    trySend(ResultState.Error(it.message.toString()))
+                firebaseFireStore.collection(PRODUCT_PATH).document(productId).get()
+                    .addOnSuccessListener {
+                        val product = it.toObject(ProductDataModel::class.java)
+                        trySend(ResultState.Success(product!!))
+                    }.addOnFailureListener {
+                        trySend(ResultState.Error(it.message.toString()))
 
-                }
+                    }
             } catch (e: Exception) {
                 trySend(ResultState.Error(e.message.toString()))
             }
@@ -136,23 +140,43 @@ class RepoImpl @Inject constructor(
             }
         }
 
-    override fun getProductByCategory(categoryName: String): Flow<ResultState<List<ProductDataModel>>> = callbackFlow{
+    override fun getProductByCategory(categoryName: String): Flow<ResultState<List<ProductDataModel>>> =
+        callbackFlow {
+            try {
+                trySend(ResultState.Loading)
+                firebaseFireStore.collection(PRODUCT_PATH).whereEqualTo("category", categoryName)
+                    .get().addOnSuccessListener {
+                        val product = it.documents.mapNotNull {
+                            it.toObject(ProductDataModel::class.java)?.apply {
+                                productId = it.id
+                            }
+                        }
+                        trySend(ResultState.Success(product))
+                    }.addOnFailureListener {
+                        trySend(ResultState.Error(it.message.toString()))
+                    }
+            } catch (e: Exception) {
+                trySend(ResultState.Error(e.message.toString()))
+            }
+            awaitClose {
+                close()
+            }
+        }
+
+    override fun addToWishList(favData: FavDataModel): Flow<ResultState<String>> = callbackFlow {
         try {
             trySend(ResultState.Loading)
-            firebaseFireStore.collection(PRODUCT_PATH).whereEqualTo("category", categoryName).get().addOnSuccessListener {
-                val product = it.documents.mapNotNull {
-                    it.toObject(ProductDataModel::class.java)?.apply {
-                        productId = it.id
-                    }
+            firebaseFireStore.collection(ADDTOWISHLIST_PATH)
+                .document(firebaseAuth.currentUser!!.uid).collection(USER_FAV).add(favData)
+                .addOnSuccessListener {
+                    trySend(ResultState.Success("Added to wishlist"))
+                }.addOnFailureListener {
+                    trySend(ResultState.Error(it.message.toString()))
                 }
-                trySend(ResultState.Success(product))
-            }.addOnFailureListener {
-                trySend(ResultState.Error(it.message.toString()))
-            }
-        }catch (e : Exception){
+        } catch (e: Exception) {
             trySend(ResultState.Error(e.message.toString()))
         }
-        awaitClose{
+        awaitClose {
             close()
         }
     }

@@ -45,6 +45,9 @@ android {
 }
 
 dependencies {
+
+    implementation("com.canopas.compose-animated-navigationbar:bottombar:1.0.1")
+
     // Dagger Hilt dependencies
     implementation("com.google.dagger:hilt-android:2.51.1")
     implementation(libs.firebase.firestore)

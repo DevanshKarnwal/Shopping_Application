@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,8 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,6 +34,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.example.shoppingapp.presentation.nav.Routes
+import com.example.shoppingapp.presentation.screens.Utils.CategoryItem
+import com.example.shoppingapp.presentation.screens.Utils.ProductCart
 import com.example.shoppingapp.presentation.viewModel.MyViewModel
 
 @Composable
@@ -67,7 +76,33 @@ fun HomeScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
                 "TAG Product",
                 "HomeScreenUi: 6 ${categoryList.isEmpty()} category ${productList.isEmpty()} product"
             )
-
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                TextField(
+                    value = "",
+                    onValueChange = {},
+                    placeholder = {
+                        Text(text = "Search")
+                    },
+                    label = {Text(text = "Search")},
+                    leadingIcon = {Icon(imageVector = Icons.Default.Search, contentDescription = null)},
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = {}) {
+                    Icon(imageVector = Icons.Default.Notifications,contentDescription = null)
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Text(text = "Categories", textAlign = TextAlign.Start)
+                Text(text = "See All", textAlign = TextAlign.End)
+            }
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -78,15 +113,11 @@ fun HomeScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
 
                 items(categoryList) {
                     Log.d("TAG Product", "HomeScreenUi: 7")
-
-                    Text(
-                        text = it.name,
-                        modifier = Modifier.clickable(onClick = {
-                            navController.navigate(
-                                Routes.SeeAllProductsScreenRoute(it.name)
-                            )
-                        })
-                    )
+                    CategoryItem(imageUrl = "https://cdn-icons-png.flaticon.com/512/5499/5499206.png", categoryName = it.name) {
+                        navController.navigate(
+                            Routes.SeeAllProductsScreenRoute(it.name)
+                        )
+                    }
                 }
             }
 
@@ -94,22 +125,11 @@ fun HomeScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
 
             LazyRow(modifier = Modifier.fillMaxWidth()) {
                 items(productList) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(6.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    ProductCart(
+                        product = it
                     ) {
-                        Log.d("TAG Product", "HomeScreenUi: 8")
+                        navController.navigate(Routes.EachItemScreenRoute(it.productId))
 
-                        Text(text = it.name)
-                        Log.d("TAG Product", "HomeScreenUi:")
-                        AsyncImage(
-                            model = it.image,
-                            contentDescription = null,
-                            modifier = Modifier.size(120.dp),
-                            contentScale = ContentScale.Crop
-                        )
                     }
                 }
             }

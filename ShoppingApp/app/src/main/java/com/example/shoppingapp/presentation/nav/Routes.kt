@@ -48,5 +48,5 @@ sealed class Routes {
     object SeeAllCategoriesScreenRoute : Routes()
 
     @Serializable
-    object EachItemScreenRoute : Routes()
+    data class EachItemScreenRoute(val id : String) : Routes()
 }

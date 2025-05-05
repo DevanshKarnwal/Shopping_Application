@@ -4,14 +4,18 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shoppingapp.common.ResultState
+import com.example.shoppingapp.domain.UseCase.AddToWishListUseCase
 import com.example.shoppingapp.domain.UseCase.CreateUserUseCase
 import com.example.shoppingapp.domain.UseCase.GetAllCategoriesUseCase
 import com.example.shoppingapp.domain.UseCase.GetAllProductsUseCase
 import com.example.shoppingapp.domain.UseCase.GetProductByCategoryUseCase
+import com.example.shoppingapp.domain.UseCase.GetProductByIdUseCase
 import com.example.shoppingapp.domain.UseCase.LoginUserUseCase
 import com.example.shoppingapp.domain.models.CategoryDataModels
+import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.domain.models.ProductDataModel
 import com.example.shoppingapp.domain.models.UserDataModels
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +30,10 @@ class MyViewModel @Inject constructor(
     private val loginUserUseCase: LoginUserUseCase,
     private val getAlCategoriesUseCase: GetAllCategoriesUseCase,
     private val getAllProductsUseCase: GetAllProductsUseCase,
-    private val getProductByCategoryUseCase: GetProductByCategoryUseCase
+    private val getProductByCategoryUseCase: GetProductByCategoryUseCase,
+    private val getProductByIdUseCase: GetProductByIdUseCase,
+    private val addToWishListUseCase: AddToWishListUseCase,
+    private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
 
     private val _createUserState = MutableStateFlow(CreateUserState())
@@ -44,6 +51,15 @@ class MyViewModel @Inject constructor(
     private val _productByCategoryState = MutableStateFlow(ProductByCategoryState())
     val productByCategoryState = _productByCategoryState.asStateFlow()
 
+    private val _getProductByIdState = MutableStateFlow(GetProductByIdState())
+    val getProductByIdState = _getProductByIdState.asStateFlow()
+
+    private val _addToWishListState = MutableStateFlow(AddToWishListState())
+    val addToWishListState = _addToWishListState.asStateFlow()
+
+    var userId = ""
+        private set
+
     fun createUser(userData: UserDataModels) {
         viewModelScope.launch(Dispatchers.IO) {
             createUserUseCase.createUserUseCase(userData).collect {
@@ -53,6 +69,7 @@ class MyViewModel @Inject constructor(
                     }
 
                     is ResultState.Success -> {
+                        userId = firebaseAuth.currentUser?.uid.toString()
                         _createUserState.value = CreateUserState(isSuccessful = it.data)
                     }
 
@@ -73,6 +90,7 @@ class MyViewModel @Inject constructor(
                     }
 
                     is ResultState.Success -> {
+                        userId = firebaseAuth.currentUser?.uid.toString()
                         _loginUserState.value = LoginUserState(isSuccessful = it.data)
                     }
 
@@ -166,6 +184,43 @@ class MyViewModel @Inject constructor(
         }
     }
 
+    fun getProductById(id : String){
+        viewModelScope.launch(Dispatchers.IO) {
+            getProductByIdUseCase.getProductById(id).collect{
+                when(it){
+                    is ResultState.Loading -> {
+                        _getProductByIdState.value = GetProductByIdState(isLoaded = true)
+                    }
+                    is ResultState.Error -> {
+                        _getProductByIdState.value = GetProductByIdState(isError = it.message)
+                    }
+                    is ResultState.Success -> {
+                        _getProductByIdState.value = GetProductByIdState(isSuccessful = it.data)
+                    }
+                }
+            }
+        }
+    }
+
+    fun addToWishList(favData: FavDataModel){
+        viewModelScope.launch(Dispatchers.IO) {
+            addToWishListUseCase.addToWishListUseCase(favData).collect{
+                when(it){
+                    is ResultState.Loading -> {
+                        _addToWishListState.value = AddToWishListState(isLoaded = true)
+                    }
+                    is ResultState.Error -> {
+                        _addToWishListState.value = AddToWishListState(isError = it.message)
+                    }
+                    is ResultState.Success -> {
+                        _addToWishListState.value = AddToWishListState(isSuccessful = it.data)
+                    }
+                }
+            }
+
+        }
+    }
+
 }
 
 
@@ -196,5 +251,17 @@ data class HomeScreenState(
 data class ProductByCategoryState(
     val isLoaded: Boolean = false,
     val isSuccessful: List<ProductDataModel>? = null,
+    val isError: String? = null
+)
+
+data class GetProductByIdState(
+    val isLoaded: Boolean = false,
+    val isSuccessful: ProductDataModel? = null,
+    val isError: String? = null
+)
+
+data class AddToWishListState(
+    val isLoaded: Boolean = false,
+    val isSuccessful: String? = null,
     val isError: String? = null
 )

@@ -2,6 +2,7 @@ package com.example.shoppingapp.domain.repo
 
 import com.example.shoppingapp.common.ResultState
 import com.example.shoppingapp.domain.models.CategoryDataModels
+import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.domain.models.ProductDataModel
 import com.example.shoppingapp.domain.models.UserDataModels
 import kotlinx.coroutines.flow.Flow
@@ -14,11 +15,12 @@ interface Repo {
 
     fun getCategory() : Flow<ResultState<List<CategoryDataModels>>>
 
-
     fun getProducts() : Flow<ResultState<List<ProductDataModel>>>
 
     fun getProductById(productId : String) : Flow<ResultState<ProductDataModel>>
 
     fun getProductByCategory(categoryName : String) : Flow<ResultState<List<ProductDataModel>>>
+
+    fun addToWishList(favData : FavDataModel) : Flow<ResultState<String>>
 
 }
