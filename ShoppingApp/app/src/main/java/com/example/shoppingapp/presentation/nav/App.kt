@@ -172,7 +172,8 @@ fun App(
                         CartScreenUi(navController = navController)
                     }
                     composable<Routes.CheckOutScreenRoute> {
-                        CheckOutScreenUi()
+                        CheckOutScreenUi(
+                            navController = navController,)
                     }
                     composable<Routes.SeeAllProductsScreenRoute> {
                         val data = it.toRoute<Routes.SeeAllProductsScreenRoute>()
