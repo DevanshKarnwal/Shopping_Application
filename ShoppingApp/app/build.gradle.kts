@@ -57,7 +57,6 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.inappmessaging.display)
-    implementation(libs.firebase.messaging)
     ksp("com.google.dagger:hilt-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     ksp("androidx.hilt:hilt-compiler:1.2.0")

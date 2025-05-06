@@ -19,7 +19,6 @@ import javax.inject.Inject
 class RepoImpl @Inject constructor(
     private val fireStore: FirebaseFirestore,
     private val storage: FirebaseStorage,
-    private val firebaseStorage: FirebaseStorage
 ) : Repo {
     override suspend fun addCategory(category: CategoryModels): Flow<ResultState<String>> = callbackFlow {
                 trySend(ResultState.Loading)
@@ -114,7 +113,7 @@ class RepoImpl @Inject constructor(
     override suspend fun addBannerPhoto(photoUri: Uri): Flow<ResultState<String>> = callbackFlow {
         try {
             trySend(ResultState.Loading)
-            firebaseStorage.reference.child("BannerImage/${System.currentTimeMillis()}")
+            storage.reference.child("BannerImage/${System.currentTimeMillis()}")
                 .putFile(photoUri ?:Uri.EMPTY).addOnSuccessListener {
                     it.storage.downloadUrl.addOnSuccessListener{
                         trySend(ResultState.Success(it.toString()))
