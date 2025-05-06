@@ -1,9 +1,11 @@
 package com.example.shoppingadminapp.data.repoImpl
 
 import android.net.Uri
+import com.example.shoppingadminapp.common.BANNER_PATH
 import com.example.shoppingadminapp.common.CATEGORY_PATH
 import com.example.shoppingadminapp.common.PRODUCT_PATH
 import com.example.shoppingadminapp.common.ResultState
+import com.example.shoppingadminapp.domain.models.BannerModels
 import com.example.shoppingadminapp.domain.models.CategoryModels
 import com.example.shoppingadminapp.domain.models.ProductModels
 import com.example.shoppingadminapp.domain.repo.Repo
@@ -16,7 +18,8 @@ import javax.inject.Inject
 
 class RepoImpl @Inject constructor(
     private val fireStore: FirebaseFirestore,
-    private val storage: FirebaseStorage
+    private val storage: FirebaseStorage,
+    private val firebaseStorage: FirebaseStorage
 ) : Repo {
     override suspend fun addCategory(category: CategoryModels): Flow<ResultState<String>> = callbackFlow {
                 trySend(ResultState.Loading)
@@ -92,6 +95,42 @@ class RepoImpl @Inject constructor(
         }
     }
 
+    override suspend fun addBanner(banner: BannerModels): Flow<ResultState<String>> = callbackFlow{
+        try {
+            trySend(ResultState.Loading)
+            fireStore.collection(BANNER_PATH).add(banner).addOnSuccessListener {
+                trySend(ResultState.Success("Banner Added Successfully"))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        }catch (e : Exception){
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose{
+            close()
+        }
+    }
 
+    override suspend fun addBannerPhoto(photoUri: Uri): Flow<ResultState<String>> = callbackFlow {
+        try {
+            trySend(ResultState.Loading)
+            firebaseStorage.reference.child("BannerImage/${System.currentTimeMillis()}")
+                .putFile(photoUri ?:Uri.EMPTY).addOnSuccessListener {
+                    it.storage.downloadUrl.addOnSuccessListener{
+                        trySend(ResultState.Success(it.toString()))
+                    }.addOnFailureListener {
+                        trySend(ResultState.Error(it.message.toString()))
+                    }
+                }.addOnFailureListener {
+                    trySend(ResultState.Error(it.message.toString()))
+                }
+        }
+        catch (e : Exception){
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose{
+            close()
+        }
+    }
 
 }

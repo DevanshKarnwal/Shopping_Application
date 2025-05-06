@@ -4,10 +4,13 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shoppingadminapp.common.ResultState
+import com.example.shoppingadminapp.domain.UseCase.AddBannerImageUseCase
+import com.example.shoppingadminapp.domain.UseCase.AddBannerUseCase
 import com.example.shoppingadminapp.domain.UseCase.AddCategoryUseCase
 import com.example.shoppingadminapp.domain.UseCase.AddProductPhotoUseCase
 import com.example.shoppingadminapp.domain.UseCase.AddProductUseCase
 import com.example.shoppingadminapp.domain.UseCase.GetAllCategoriesUseCase
+import com.example.shoppingadminapp.domain.models.BannerModels
 import com.example.shoppingadminapp.domain.models.CategoryModels
 import com.example.shoppingadminapp.domain.models.ProductModels
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,19 +25,27 @@ class MyViewModel @Inject constructor(
     private val addCategoryUseCase: AddCategoryUseCase,
     private val getAllCategoryUseCase: GetAllCategoriesUseCase,
     private val addProductUseCase: AddProductUseCase,
-    private val addProductPhotoUseCase: AddProductPhotoUseCase
+    private val addProductPhotoUseCase: AddProductPhotoUseCase,
+    private val addBannerUseCase: AddBannerUseCase,
+    private val addBannerImageUseCase: AddBannerImageUseCase
 ) : ViewModel() {
-    val _addCategory = MutableStateFlow(AddCategoryState())
+    private val _addCategory = MutableStateFlow(AddCategoryState())
     val addCategory = _addCategory.asStateFlow()
 
-    val _getAllCategory = MutableStateFlow(GetAllCategorySate())
+    private  val _getAllCategory = MutableStateFlow(GetAllCategorySate())
     val getAllCategory = _getAllCategory.asStateFlow()
 
-    val _addProduct = MutableStateFlow(AddProductState())
+    private val _addProduct = MutableStateFlow(AddProductState())
     val addProduct = _addProduct.asStateFlow()
 
-    val _addProductPhotoState = MutableStateFlow(AddProductPhotoState())
+    private val _addProductPhotoState = MutableStateFlow(AddProductPhotoState())
     val addProductPhotoState = _addProductPhotoState.asStateFlow()
+
+    private val _addBanner = MutableStateFlow(AddBannerState())
+    val addBannerState = _addBanner.asStateFlow()
+
+    private val _addBannerPhotoState = MutableStateFlow(AddBannerPhotoState())
+    val addBannerPhotoState = _addBannerPhotoState.asStateFlow()
 
     fun addCategory(category: CategoryModels) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -110,6 +121,43 @@ class MyViewModel @Inject constructor(
         }
     }
 
+    fun addBanner(banner : BannerModels){
+        viewModelScope.launch(Dispatchers.IO) {
+            addBannerUseCase.addBannerUseCase(banner).collect{
+                when(it){
+                    is ResultState.Error -> {
+                        _addBanner.value = AddBannerState(error = it.message)
+                    }
+                    ResultState.Loading -> {
+                        _addBanner.value = AddBannerState(isLoading = true)
+                    }
+                    is ResultState.Success -> {
+                        _addBanner.value = AddBannerState(isSuccess = it.data.toString())
+                    }
+                }
+            }
+        }
+    }
+
+    fun addBannerPhoto(photoUri: Uri){
+        viewModelScope.launch(Dispatchers.IO){
+            addBannerImageUseCase.addBannerImageUseCase(photoUri).collect{
+                when(it){
+                    is ResultState.Error -> {
+                        _addBannerPhotoState.value = AddBannerPhotoState(error = it.message)
+                    }
+                    ResultState.Loading -> {
+                        _addBannerPhotoState.value = AddBannerPhotoState(isLoading = true)
+                    }
+                    is ResultState.Success -> {
+                        _addBannerPhotoState.value = AddBannerPhotoState(isSuccess = it.data.toString())
+                    }
+                }
+            }
+
+        }
+    }
+
 }
 
 
@@ -132,6 +180,18 @@ data class AddProductState(
 )
 
 data class AddProductPhotoState(
+    val isLoading: Boolean = false,
+    val isSuccess: String? = null,
+    val error: String? = null
+)
+
+data class AddBannerState(
+    val isLoading: Boolean = false,
+    val isSuccess: String? = null,
+    val error: String? = null
+)
+
+data class AddBannerPhotoState(
     val isLoading: Boolean = false,
     val isSuccess: String? = null,
     val error: String? = null
