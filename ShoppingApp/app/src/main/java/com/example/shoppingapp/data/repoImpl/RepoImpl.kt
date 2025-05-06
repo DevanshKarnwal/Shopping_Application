@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.core.net.toUri
 import com.example.shoppingapp.common.ADDTOWISHLIST_PATH
 import com.example.shoppingapp.common.ADD_TO_CART_PATH
+import com.example.shoppingapp.common.BANNER_PATH
 import com.example.shoppingapp.common.CART_ID_PATH
 import com.example.shoppingapp.common.CATEGORY_PATH
 import com.example.shoppingapp.common.PRODUCT_PATH
@@ -11,6 +12,7 @@ import com.example.shoppingapp.common.ResultState
 import com.example.shoppingapp.common.USER_FAV
 import com.example.shoppingapp.common.USER_PATH
 import com.example.shoppingapp.domain.models.AddToCartModel
+import com.example.shoppingapp.domain.models.BannerModels
 import com.example.shoppingapp.domain.models.CategoryDataModels
 import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.domain.models.ProductDataModel
@@ -204,6 +206,43 @@ class RepoImpl @Inject constructor(
         }
     }
 
+    override fun getCart(): Flow<ResultState<List<AddToCartModel>>> = callbackFlow {
+        try {
+            trySend(ResultState.Loading)
+            firebaseFireStore.collection(ADD_TO_CART_PATH).document(firebaseAuth.currentUser!!.uid)
+                .collection(CART_ID_PATH).get().addOnSuccessListener {
+                    val data = it.documents.mapNotNull {
+                        it.toObject(AddToCartModel::class.java)
+                    }
+                    trySend(ResultState.Success(data))
+                }.addOnFailureListener {
+                    trySend(ResultState.Error(it.message.toString()))
+            }
+        } catch (e: Exception) {
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose {
+            close()
+        }
+    }
+
+    override fun getBanner(): Flow<ResultState<List<BannerModels>>> = callbackFlow {
+        try {
+            trySend(ResultState.Loading)
+            firebaseFireStore.collection(BANNER_PATH).get().addOnSuccessListener {
+                val banner = it.documents.mapNotNull {
+                    it.toObject(BannerModels::class.java)
+                }
+                trySend(ResultState.Success(banner))
+            }
+        } catch (e: Exception) {
+            trySend(ResultState.Error(e.message.toString()))
+        }
+        awaitClose {
+            close()
+        }
+    }
+
     override fun getUser(): Flow<ResultState<UserDataModels>> = callbackFlow {
         try {
             trySend(ResultState.Loading)
@@ -244,7 +283,7 @@ class RepoImpl @Inject constructor(
             trySend(ResultState.Loading)
             firebaseStorage.reference.child("UserProfileImage/${firebaseAuth.currentUser!!.uid}")
                 .putFile(imageUrl.toUri()).addOnSuccessListener {
-                    it.storage.downloadUrl.addOnSuccessListener{
+                    it.storage.downloadUrl.addOnSuccessListener {
                         trySend(ResultState.Success(it.toString()))
                     }.addOnFailureListener {
                         trySend(ResultState.Error(it.message.toString()))
@@ -260,10 +299,6 @@ class RepoImpl @Inject constructor(
             close()
         }
     }
-
-
-
-
 
 
 }

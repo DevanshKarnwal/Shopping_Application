@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
@@ -27,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -67,15 +69,18 @@ fun HomeScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
 
         val categoryList = homeScreenState.value.category ?: emptyList()
         val productList = homeScreenState.value.product ?: emptyList()
+        val bannerList = homeScreenState.value.banner ?: emptyList()
+
+
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
         ) {
             Log.d(
                 "TAG Product",
                 "HomeScreenUi: 6 ${categoryList.isEmpty()} category ${productList.isEmpty()} product"
             )
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -87,21 +92,26 @@ fun HomeScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
                     placeholder = {
                         Text(text = "Search")
                     },
-                    label = {Text(text = "Search")},
-                    leadingIcon = {Icon(imageVector = Icons.Default.Search, contentDescription = null)},
+                    label = { Text(text = "Search") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null
+                        )
+                    },
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = {}) {
-                    Icon(imageVector = Icons.Default.Notifications,contentDescription = null)
+                    Icon(imageVector = Icons.Default.Notifications, contentDescription = null)
                 }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
-            ){
-                Text(text = "Categories", textAlign = TextAlign.Start)
-                Text(text = "See All", textAlign = TextAlign.End)
+            ) {
+                Text(text = "Categories", textAlign = TextAlign.Start, modifier = Modifier.padding(start = 20.dp))
+                Text(text = "See All", textAlign = TextAlign.End, modifier = Modifier.padding(end = 20.dp))
             }
             LazyRow(
                 modifier = Modifier
@@ -113,7 +123,10 @@ fun HomeScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
 
                 items(categoryList) {
                     Log.d("TAG Product", "HomeScreenUi: 7")
-                    CategoryItem(imageUrl = "https://cdn-icons-png.flaticon.com/512/5499/5499206.png", categoryName = it.name) {
+                    CategoryItem(
+                        imageUrl = "https://cdn-icons-png.flaticon.com/512/5499/5499206.png",
+                        categoryName = it.name
+                    ) {
                         navController.navigate(
                             Routes.SeeAllProductsScreenRoute(it.name)
                         )
@@ -134,10 +147,37 @@ fun HomeScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
                 }
             }
 
-        }
+            Spacer(modifier = Modifier.height(10.dp))
 
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(6.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                items(bannerList) {
+                    Box(
+                        modifier = Modifier
+                    ) {
+                        AsyncImage(
+                            model = it.imageUri,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .padding(20.dp)
+                                .size(80.dp)
+                                .clip(CircleShape)
+                        )
+
+                    }
+                }
+            }
+        }
 
     }
 
+
 }
+
+
 

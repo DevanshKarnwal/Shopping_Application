@@ -2,6 +2,7 @@ package com.example.shoppingapp.domain.repo
 
 import com.example.shoppingapp.common.ResultState
 import com.example.shoppingapp.domain.models.AddToCartModel
+import com.example.shoppingapp.domain.models.BannerModels
 import com.example.shoppingapp.domain.models.CategoryDataModels
 import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.domain.models.ProductDataModel
@@ -32,5 +33,8 @@ interface Repo {
 
     fun addToCart(cartData : AddToCartModel) : Flow<ResultState<String>>
 
+    fun getCart() : Flow<ResultState<List<AddToCartModel>>>
+
+    fun getBanner() : Flow<ResultState<List<BannerModels>>>
 
 }

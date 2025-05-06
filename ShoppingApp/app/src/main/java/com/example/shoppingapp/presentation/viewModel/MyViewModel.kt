@@ -9,6 +9,8 @@ import com.example.shoppingapp.domain.UseCase.AddToWishListUseCase
 import com.example.shoppingapp.domain.UseCase.CreateUserUseCase
 import com.example.shoppingapp.domain.UseCase.GetAllCategoriesUseCase
 import com.example.shoppingapp.domain.UseCase.GetAllProductsUseCase
+import com.example.shoppingapp.domain.UseCase.GetBannerUseCase
+import com.example.shoppingapp.domain.UseCase.GetCartDataUseCase
 import com.example.shoppingapp.domain.UseCase.GetProductByCategoryUseCase
 import com.example.shoppingapp.domain.UseCase.GetProductByIdUseCase
 import com.example.shoppingapp.domain.UseCase.GetUserProfileImageUseCase
@@ -16,6 +18,7 @@ import com.example.shoppingapp.domain.UseCase.GetUserUseCase
 import com.example.shoppingapp.domain.UseCase.LoginUserUseCase
 import com.example.shoppingapp.domain.UseCase.UpdateUserDataUseCase
 import com.example.shoppingapp.domain.models.AddToCartModel
+import com.example.shoppingapp.domain.models.BannerModels
 import com.example.shoppingapp.domain.models.CategoryDataModels
 import com.example.shoppingapp.domain.models.FavDataModel
 import com.example.shoppingapp.domain.models.ProductDataModel
@@ -42,6 +45,8 @@ class MyViewModel @Inject constructor(
     private val getUserUseCase: GetUserUseCase,
     private val updateUserDataUseCase: UpdateUserDataUseCase,
     private val updateUserProfileImageUseCase: GetUserProfileImageUseCase,
+    private val getBannerUseCase: GetBannerUseCase,
+    private val getCartUseCase : GetCartDataUseCase,
     private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
 
@@ -77,6 +82,15 @@ class MyViewModel @Inject constructor(
 
     private val _updateUserProfileImageState = MutableStateFlow(UpdateUserProfileImageState())
     val updateUserProfileImageState = _updateUserProfileImageState.asStateFlow()
+
+    private val _getBannerState = MutableStateFlow(GetBannerState())
+    val getBannerState = _getBannerState.asStateFlow()
+
+    private val _getCartState = MutableStateFlow(GetCartData())
+    val getCartState = _getCartState.asStateFlow()
+
+    private val _cartProducts = MutableStateFlow<List<ProductDataModel>>(emptyList())
+    val cartProducts = _cartProducts.asStateFlow()
 
     var userId = ""
         private set
@@ -154,15 +168,16 @@ class MyViewModel @Inject constructor(
 
             combine(
                 getAlCategoriesUseCase.getAllCategoriesUseCase(),
-                getAllProductsUseCase.getAllProductsUseCase()
-            ) { categoriesState, productsState ->
-                Pair(categoriesState, productsState)
-            }.collect { (categoriesState, productsState) ->
+                getAllProductsUseCase.getAllProductsUseCase(),
+                getBannerUseCase.getBannerUseCase()
+            ) { categoriesState, productsState, bannerState ->
+                Triple(categoriesState, productsState,bannerState)
+            }.collect { (categoriesState, productsState,bannerState) ->
 
                 Log.d("TAG Product", "getProducts: viewmodel after combine")
 
                 when {
-                    categoriesState is ResultState.Loading && productsState is ResultState.Loading -> {
+                    categoriesState is ResultState.Loading && productsState is ResultState.Loading && bannerState is ResultState.Loading -> {
                         _homeScreenState.value = HomeScreenState(isLoaded = true)
                     }
 
@@ -176,10 +191,16 @@ class MyViewModel @Inject constructor(
                             HomeScreenState(isError = productsState.message)
                     }
 
-                    categoriesState is ResultState.Success && productsState is ResultState.Success -> {
+                    bannerState is ResultState.Error -> {
+                        _homeScreenState.value =
+                            HomeScreenState(isError = bannerState.message)
+                    }
+
+                    categoriesState is ResultState.Success && productsState is ResultState.Success && bannerState is ResultState.Success -> {
                         _homeScreenState.value = HomeScreenState(
                             category = categoriesState.data,
-                            product = productsState.data
+                            product = productsState.data,
+                            banner = bannerState.data
                         )
                     }
 
@@ -325,6 +346,60 @@ class MyViewModel @Inject constructor(
             }
         }
     }
+
+    fun getBanner(){
+        viewModelScope.launch(Dispatchers.IO) {
+            getBannerUseCase.getBannerUseCase().collect{
+                when(it){
+                    is ResultState.Loading -> {
+                        _getBannerState.value = GetBannerState(isLoaded = true)
+                    }
+                    is ResultState.Error -> {
+                        _getBannerState.value = GetBannerState(isError = it.message)
+                    }
+                    is ResultState.Success -> {
+                        _getBannerState.value = GetBannerState(isSuccessful = it.data)
+                    }
+                }
+            }
+        }
+
+    }
+
+    fun loadCartProducts() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val cartItemsResult = getCartUseCase.getCartDataUseCase()
+
+            cartItemsResult.collect { result ->
+                when (result) {
+                    is ResultState.Loading -> {
+                        _getCartState.value = GetCartData(isLoaded = true)
+                    }
+
+                    is ResultState.Error -> {
+                        _getCartState.value = GetCartData(isError = result.message)
+                    }
+
+                    is ResultState.Success -> {
+                        _getCartState.value = GetCartData(isSuccessful = result.data)
+
+                        val products = mutableListOf<ProductDataModel>()
+                        result.data?.forEach { cartItem ->
+                            getProductByIdUseCase.getProductById(cartItem.productId).collect { prodResult ->
+                                if (prodResult is ResultState.Success) {
+                                    products.add(prodResult.data)
+                                    _cartProducts.value = products.toList()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
 }
 
 
@@ -350,7 +425,8 @@ data class HomeScreenState(
     val isLoaded: Boolean = false,
     val isError: String? = null,
     val category: List<CategoryDataModels>? = null,
-    val product: List<ProductDataModel>? = null
+    val product: List<ProductDataModel>? = null,
+    val banner: List<BannerModels>? = null
 )
 
 data class ProductByCategoryState(
@@ -392,5 +468,17 @@ data class UpdateUserDataState(
 data class UpdateUserProfileImageState(
     val isLoaded: Boolean = false,
     val isSuccessful: String? = null,
+    val isError: String? = null
+)
+
+data class GetBannerState(
+    val isLoaded: Boolean = false,
+    val isSuccessful: List<BannerModels>? = null,
+    val isError: String? = null
+)
+
+data class GetCartData(
+    val isLoaded: Boolean = false,
+    val isSuccessful: List<AddToCartModel>?= null,
     val isError: String? = null
 )

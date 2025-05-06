@@ -169,7 +169,7 @@ fun App(
                         WishListScreenUi()
                     }
                     composable<Routes.CartScreenRoute> {
-                        CartScreenUi()
+                        CartScreenUi(navController = navController)
                     }
                     composable<Routes.CheckOutScreenRoute> {
                         CheckOutScreenUi()
